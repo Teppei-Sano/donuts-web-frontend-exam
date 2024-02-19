@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>DONUTS FRONTEND EXAM</title>
+    <meta name="description" content="web-frontend-exam">
+    <meta name="author" content="web-frontend-exam">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="./_src/sass/css/style.css">  
+</head>
+<body>
+ <header>
+    <h1>DONUTS FRONTEND EXAM</h1>
+</header>
+<section class="sectionOne">
+    <div class="containerOne">
+        <h2 class="h2One">試験概要
+            <hr class="hrGradation">
+        </h2>
+        <div class="containerTwo">
+            <p>コーディング課題（試験内容）に取り組んで<br class="sp-only">いただきたく、ご案内お願いいたします。<br><br>
+                
+                <b>・フロントエンドエンジニア職に応募の方</b><br>
+                ・1 〜 4すべてご対応ください。<br>
+                ・「4. 提出方法」に関して、github<br class="sp-only">での提出を推奨します。<br><br>
+                
+                <b>・デザイナー職に応募の方</b><br>
+                ・「3. APIによる反映」 の対応は不要です。<br>
+                ・「4. 提出方法」に関して、githubでの提出<br class="sp-only">が難しい場合、圧縮ファイルでの提出でも可です。
+            </p>
+        </div>
+    </div>
+</section>
+
+<section class="sectionTwo">
+    <div class="containerOne">
+        <h2 class="h2One">試験内容
+            <hr class="hrGradation">
+        </h2>
+        <div class="containerTree">
+            <h3>1. デザインに従ってコーディングを<br class="sp-only">してください</h3>
+            <p>https://xd.adobe.com/view/6326e7bd-<br class="sp-only">2396-4838-8359-32f096cac59d-3675/の<br class="sp-only">デザインに沿って(問題文等も含めて)<br class="sp-only">コーディングをしてください。 <br>
+                なお、ベースとなるソースコードは https://<br class="sp-only">github.com/d-o-n-u-t-s/web-frontend-exam/<br class="sp-only">をCloneしてご使用ください。</p>
+            <br>
+            <h3>2. レスポンシブにコーディング<br class="sp-only">してください</h3>
+            <p>PC、モバイルそれぞれで何か1つのブラウザで確認で<br class="sp-only">きる状態にしてください。 <br>
+                なお、提出時に確認済みブラウザを共有下さい。</p>
+            <br>
+            <h3>3. 以下のAPIを使って、天気情報を動的に<br class="sp-only">取得し反映させてください</h3>
+            <p>・Open-Meteo WeatherForecastAPI ...<br class="sp-only">https://open-meteo.com/en/docs/<br>
+                ・天気予報 API（livedoor 天気互換） …<br class="sp-only">https://weather.tsukumijima.net/<br><br>
+                <span class="smallText">※ weatherCodeに対応する天候名とアイコンの取得は<br class="sp-only">getWeatherInfo.js を使用してよいものとします。<br>
+                    ※ どちらも観測地点は東京とし、(緯度, 経度) = (35.6785,<br class="sp-only">139.6823) とします。<br>
+                    <span class="pc-only">※ APIからの取得が難しい場合は、レイアウトのみ再現してください。</span><span class="sp-only">※ 難しい場合は免除としますので、提出時にその旨をお伝え下さい。</span>
+                </span>
+            </p>
+            <br>
+            <h3>4. 以下のいずれかの方法で<br class="sp-only">提出をしてください</h3>
+            <p class="pc-only">・ご自身のgithub上にリポジトリを作成し、そこにpushした上で、リポジトリURLを共有する。<br>
+                なお、ベースとなるソースコードは https://github.com/d-o-n-u-t-s/web-frontend-exam/ を Cloneしてご使用ください。
+                ・clone先のディレクトリを.gitディレクトリを含んだ状態で圧縮(zip, tar等)し、添付して提出する。
+            </p>
+            <p class="sp-only">・clone先のディレクトリを.gitディレクトリを含ん<br>だ状態で圧縮(zip, tar等)しメールに添付する。<br>
+                ・自身のgithub上にリポジトリを作成し、そこに<br>pushする。メールにリポジトリのURLを記載する。
+            </p>
+        </div>
+    </div>
+</section>
+  
+  
+
+
+    <script>
+        async function fetchWeatherData() {
+            try {
+                const response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=35.7&longitude=139.6875&current=temperature_2m,precipitation&hourly=temperature_2m,precipitation_probability&timezone=Asia%2FTokyo");
+                const data = await response.json();
+
+                const chanceOfRainData = data.hourly.precipitation_probability;
+
+                // Split the data into today and tomorrow
+                const todayData = chanceOfRainData.slice(0, 24); // 0-23 hours
+                const tomorrowData = chanceOfRainData.slice(24); // 24-47 hours
+
+                // Calculate average for each time range
+                const todayAverages = calculateAverages(todayData);
+                const tomorrowAverages = calculateAverages(tomorrowData);
+
+                // Update HTML with forecast data
+                updateTable("todayChanceOfRain", todayAverages);
+                updateTable("tomorrowChanceOfRain", tomorrowAverages);
+            } catch (error) {
+                console.error("Error fetching weather data:", error);
+            }
+        }
+
+        function calculateAverages(data) {
+            const averages = [0, 0, 0, 0];
+            const counts = [0, 0, 0, 0];
+
+            data.forEach((probability, index) => {
+                const rangeIndex = Math.floor(index / 6); // Divide by 6 to get index for 4 ranges
+
+                averages[rangeIndex] += probability;
+                counts[rangeIndex]++;
+            });
+
+            // Calculate averages
+            for (let i = 0; i < averages.length; i++) {
+                averages[i] = counts[i] > 0 ? (averages[i] / counts[i]).toFixed(2) : 0;
+            }
+
+            return averages;
+        }
+
+        function updateTable(tableId, averages) {
+          const tableBody = document.getElementById(tableId);
+          const timeRanges = ["0-6時", "6-12時", "12-18時", "18-24時"];
+
+          timeRanges.forEach((range, index) => {
+              const row = document.createElement("tr");
+
+              const timeRangeCell = document.createElement("td");
+              timeRangeCell.textContent = range;
+              row.appendChild(timeRangeCell);
+
+              const averageCell = document.createElement("td");
+
+              // 切り捨てて整数に変換
+              const roundedAverage = Math.floor(averages[index]);
+              averageCell.textContent = `${roundedAverage}%`;
+
+              row.appendChild(averageCell);
+
+              tableBody.appendChild(row);
+          });
+      }
+
+        window.onload = fetchWeatherData;
+    </script>
+
+
+<script type="module">
+  import { getWeatherInfo } from './_src/js/hooks/getWeatherInfo.js';
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    const apiUrl = 'https://api.open-meteo.com/v1/forecast?latitude=35.6895&longitude=139.6917&current=temperature_2m,precipitation&hourly=temperature_2m,precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_hours,precipitation_probability_max&timezone=Asia%2FTokyo';
+    try {
+      const response = await fetch(apiUrl);
+      const data = await response.json();
+      const dailyData = data.daily;
+      const weatherContainer = document.createElement('div');
+      weatherContainer.id = 'weatherContainer';
+      document.body.appendChild(weatherContainer);
+
+      const currentDate = new Date();
+      const today = currentDate.getDate();
+      const dayOfWeek = currentDate.getDay();
+
+      // 本日と明日の div を追加
+      const todayAndTomorrowContainer = document.createElement('section');
+      todayAndTomorrowContainer.classList.add('sectionTree');
+
+      // 昨日の最低気温と今日の最低気温の差を計算
+      const minTemperatureYesterday = (dailyData.temperature_2m_min[-1] !== undefined) ? Math.floor(dailyData.temperature_2m_min[-1]) : 0;
+      const minTemperatureToday = (dailyData.temperature_2m_min[0] !== undefined) ? Math.floor(dailyData.temperature_2m_min[0]) : 0;
+      const minTemperatureDifference = minTemperatureYesterday - minTemperatureToday;
+
+      // 昨日の最高気温と今日の最高気温の差を計算
+      const maxTemperatureYesterday = (dailyData.temperature_2m_max[-1] !== undefined) ? Math.floor(dailyData.temperature_2m_max[-1]) : 0;
+      const maxTemperatureToday = (dailyData.temperature_2m_max[0] !== undefined) ? Math.floor(dailyData.temperature_2m_max[0]) : 0;
+      const maxTemperatureDifference = maxTemperatureYesterday - maxTemperatureToday;
+
+      // 今日の最低気温と明日の最低気温の差を計算
+      const minTemperatureDifference2 = (dailyData.temperature_2m_min[0] !== undefined && dailyData.temperature_2m_min[1] !== undefined)
+        ? Math.floor(dailyData.temperature_2m_min[0]) - Math.floor(dailyData.temperature_2m_min[1])
+        : 0;
+
+      // 今日の最高気温と明日の最高気温の差を計算
+      const maxTemperatureDifference2 = (dailyData.temperature_2m_max[0] !== undefined && dailyData.temperature_2m_max[1] !== undefined)
+        ? Math.floor(dailyData.temperature_2m_max[0]) - Math.floor(dailyData.temperature_2m_max[1])
+        : 0;
+
+      // 本日と明日の降水確率
+      const precipitationProbabilityToday = dailyData.precipitation_probability_max && dailyData.precipitation_probability_max[0];
+      const precipitationProbabilityTomorrow = dailyData.precipitation_probability_max && dailyData.precipitation_probability_max[1];
+
+      // 時間帯ごとの降水確率
+      const timeLabels = ["00-06時", "06-12時", "12-18時", "18-24時"];
+
+      const precipitationToday = precipitationProbabilityToday ? (Array.isArray(precipitationProbabilityToday) ? precipitationProbabilityToday : [precipitationProbabilityToday]) : [];
+      const precipitationTomorrow = precipitationProbabilityTomorrow ? (Array.isArray(precipitationProbabilityTomorrow) ? precipitationProbabilityTomorrow : [precipitationProbabilityTomorrow]) : [];
+
+      // 本日と明日の div を HTML に追加
+      todayAndTomorrowContainer.innerHTML = `
+        <div class="containerOne">
+          <h2 class="h2One todayTomorrowTop">今日/明日の天気
+            <hr class="hrGradation">
+          </h2>
+          <div class="weatherBoxOne">
+            <h4 class="today">今日の天気</h4>
+            <p class="weatherP">${getWeatherInfo(dailyData.weather_code[0]).label}</p>
+            <img class="weatherImg" src="${getWeatherInfo(dailyData.weather_code[0]).icon}" alt="${getWeatherInfo(dailyData.weather_code[0]).label}">
+            <br>
+            <div class="todayTomorrowTemperature">
+              <p class="hotP"><b class="temperature">${dailyData.temperature_2m_max[0]}°C</b>℃<br>[${maxTemperatureDifference}]</p>
+              <p class="coldP"><b class="temperature">${dailyData.temperature_2m_min[0]}°C</b>℃<br>[${minTemperatureDifference}]</p>
+              <br>
+              <p class="timeP timePToday">時間<br>降水</p>
+              <div class="textLeft textLeftBoxToday">
+                <p class="precipitationP" id="todayChanceOfRain" ></p><p class="timeP"></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="weatherBoxTwo">
+            <h4 class="tomorrow">明日の天気</h4>
+            <p class="weatherP">${getWeatherInfo(dailyData.weather_code[1]).label}</p>
+            <img class="weatherImg" src="${getWeatherInfo(dailyData.weather_code[1]).icon}" alt="${getWeatherInfo(dailyData.weather_code[1]).label}">
+            <br>
+            <div class="todayTomorrowTemperature">
+              <p class="hotP"><b class="temperature">${dailyData.temperature_2m_max[1]}</b>℃<br>[${maxTemperatureDifference2}]</p>
+              <p class="coldP"><b class="temperature">${dailyData.temperature_2m_min[1]}</b>℃<br>[${minTemperatureDifference2}]</p>
+              <br>
+              <p class="timeP timePTommorow">時間<br>降水</p>
+              <div class="textLeft textLeftBoxTommorow">
+                <p class="precipitationP" id="tomorrowChanceOfRain" ></p><p class="timeP"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    weatherContainer.appendChild(todayAndTomorrowContainer);
+      
+      
+// 未来日のセクションを追加
+const futureDaysContainer = document.createElement('section');
+futureDaysContainer.classList.add('sectionFour');
+
+// 最低気温の差を計算
+const minTemperatureDifferences = [-1, 0, 1, 2, 3, 4, 5, 6, 7].map(index => Math.floor(dailyData.temperature_2m_min[index]) - Math.floor(dailyData.temperature_2m_min[index + 1]));
+
+
+// 最高気温の差を計算
+const maxTemperatureDifferences = [-1, 0, 1, 2, 3, 4, 5, 6, 7].map(index => Math.floor(dailyData.temperature_2m_max[index]) - Math.floor(dailyData.temperature_2m_max[index + 1]));
+
+
+// [2] から [6] までの情報を直接HTMLに記述
+futureDaysContainer.innerHTML = `
+  <div class="containerOne">
+    <h2 class="h2One">今週の天気
+      <hr class="hrGradation">
+    </h2>
+    ${[2, 3, 4, 5, 6].map((index) => {
+      const futureDate = new Date(dailyData.time[index]);
+      const month = futureDate.getMonth() + 1; // 月は0-indexedなので+1する
+      const day = futureDate.getDate();
+      const weekday = ['日', '月', '火', '水', '木', '金', '土'][futureDate.getDay()];
+
+      return `
+        <div class="weatherBox${index}">
+          <h4 class="today">${month}月${day}日(${weekday})</h4>
+          <p class="weatherP">${getWeatherInfo(dailyData.weather_code[index]).label}</p>
+          <img class="weatherImg" src="${getWeatherInfo(dailyData.weather_code[index]).icon}" alt="${getWeatherInfo(dailyData.weather_code[index]).label}">
+          <br>
+          <p class="hotP"><b class="temperature">${dailyData.temperature_2m_max[index]}</b>℃<br>[${maxTemperatureDifferences[index]}]</p>
+          <p class="coldP"><b class="temperature">${dailyData.temperature_2m_min[index]}</b>℃<br>[${minTemperatureDifferences[index]}]</p>
+          <br>
+        </div>
+      `;
+    }).join('')}
+  </div>
+`;
+
+// 修正後のコードを追加
+weatherContainer.appendChild(futureDaysContainer);
+      
+    } catch (error) {
+      console.error("天気データの取得エラー:", error);
+    }
+  });
+</script>
+
+   
+    <section class="sectionFive">
+        <div class="containerOne">
+            <p class="footerText">© DONUTS Co. Ltd.</p>
+        </div>
+    </section>
+    
+
+    
+    
+    
+    
+
+  </body>
+    
+    
+</html>
